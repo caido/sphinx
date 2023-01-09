@@ -4,8 +4,10 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
+	"net"
 	"net/http"
 	"sort"
+	"strings"
 
 	"gopkg.in/yaml.v1"
 )
@@ -37,7 +39,7 @@ func HTTPToSphinxRequest(r *http.Request) Request {
 	return map[string]interface{}{
 		"path":       r.URL.Path,
 		"headers":    r.Header,
-		"remoteaddr": r.RemoteAddr,
+		"remoteaddr": realipRemoteAddr(r),
 		"method":     r.Method,
 	}
 }
@@ -63,4 +65,33 @@ func SortedKeys(obj map[string]interface{}) []string {
 	}
 	sort.Strings(keys)
 	return keys
+}
+
+// realipRemoteAddr returns the real IP of the user
+func realipRemoteAddr(r *http.Request) string {
+	ips := r.Header.Get("X-Forwarded-For")
+	splitIps := strings.Split(ips, ",")
+
+	if len(splitIps) > 0 {
+		netIP := net.ParseIP(splitIps[0])
+		if netIP != nil {
+			return netIP.String()
+		}
+	}
+
+	ip, _, err := net.SplitHostPort(r.RemoteAddr)
+	if err != nil {
+		return ""
+	}
+
+	netIP := net.ParseIP(ip)
+	if netIP != nil {
+		ip := netIP.String()
+		if ip == "::1" {
+			return "127.0.0.1"
+		}
+		return ip
+	}
+
+	return ""
 }
