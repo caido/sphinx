@@ -1,9 +1,33 @@
-FROM buildpack-deps:xenial-curl
+FROM golang:1.19-alpine3.16 AS base
 
-RUN mkdir -p /etc/sphinx
+RUN apk --update upgrade && apk --no-cache --update-cache --upgrade --latest add ca-certificates build-base gcc
 
-COPY ./bin/sphinxd /usr/bin/sphinxd
+WORKDIR /build
 
-COPY kvconfig.yml /kvconfig.yml
+ADD go.mod go.mod
+ADD go.sum go.sum
 
-CMD ["sphinxd", "--config", "/etc/sphinx/sphinx.yaml"]
+ENV GO111MODULE on
+ENV CGO_ENABLED 1
+
+RUN go mod download
+
+ADD . .
+
+ARG VERSION
+
+RUN go build  \
+    -ldflags="-X main.version=v${VERSION}" \
+    -o /usr/bin/sphinxd
+
+FROM alpine:3.16
+
+RUN addgroup -S sphinx; \
+    adduser -S sphinx -G sphinx -D -u 10000 -s /bin/nologin;
+
+COPY --from=base /usr/bin/sphinxd /usr/bin/sphinxd
+
+USER 10000
+
+ENTRYPOINT ["sphinxd"]
+CMD ["--config", "/etc/sphinx/sphinx.yaml"]
