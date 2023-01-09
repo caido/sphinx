@@ -17,7 +17,7 @@ ADD . .
 ARG VERSION
 
 RUN go build  \
-    -ldflags="-X main.version=v${VERSION}" \
+    -ldflags="-X main.version=${VERSION}" \
     -o /usr/bin/sphinxd
 
 FROM alpine:3.16
