@@ -18,12 +18,6 @@ var (
 	validate   = flag.Bool("validate", false, "Validate configuration and exit")
 )
 
-func init() {
-	if err := logger.SetGlobalRouting("kvconfig.yml"); err != nil {
-		log.Fatalf("error setting kv config: %s", err)
-	}
-}
-
 func main() {
 
 	flag.Parse()
