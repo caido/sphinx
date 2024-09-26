@@ -18,6 +18,7 @@ type Config struct {
 	HealthCheck HealthCheck `yaml:"health-check"`
 	Limits      map[string]Limit
 	Storage     map[string]string
+	SilentPaths []string `yaml:"silent-paths"`
 }
 
 // Proxy holds the yaml data for the proxy option in the config file

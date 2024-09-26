@@ -9,6 +9,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"regexp"
+	"slices"
 	"time"
 
 	"github.com/Clever/sphinx/common"
@@ -123,10 +124,14 @@ func (d *daemon) LoadConfig(newConfig config.Config) error {
 		if len(matches) == 1 && len(matches[0]) == 4 {
 			path = matches[0][1] + matches[0][3]
 		}
-		return map[string]interface{}{
+		data := map[string]interface{}{
 			"guid": req.Header.Get("X-Request-Id"),
 			"op":   path, // add op key since log rollups are keyed on method, status, and op
 		}
+		if slices.Contains(newConfig.SilentPaths, req.URL.Path) {
+			data["silent"] = true
+		}
+		return data
 	})
 	return nil
 }
